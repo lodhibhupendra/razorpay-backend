@@ -1,0 +1,17 @@
+{
+    "name": "razorpay-backend",
+    "version": "1.0.0",
+    "main": "server.js",
+    "type": "commonjs",
+    "scripts": {
+      "start": "node server.js"
+    },
+    "dependencies": {
+      "express": "^4.19.2",
+      "razorpay": "^2.9.1",
+      "body-parser": "^1.20.2",
+      "cors": "^2.8.5",
+      "crypto": "^1.0.1"
+    }
+  }
+  
