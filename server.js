@@ -10,15 +10,29 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ✅ Test route
+// ✅ Health check route
 app.get("/", (req, res) => {
   res.send("✅ Razorpay Backend is running successfully!");
 });
+
+// ✅ Debug logs for environment variables (for testing on Render)
+console.log("🔑 RAZORPAY_KEY_ID:", process.env.RAZORPAY_KEY_ID);
+console.log(
+  "🔒 RAZORPAY_KEY_SECRET:",
+  process.env.RAZORPAY_KEY_SECRET ? "✅ Loaded" : "❌ Missing"
+);
 
 // ✅ Create Razorpay order
 app.post("/create-order", async (req, res) => {
   try {
     const { amount, currency = "INR", receipt } = req.body;
+
+    // 🧠 Check env variables
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      return res.status(500).json({
+        error: "Razorpay credentials not configured properly on server.",
+      });
+    }
 
     const razorpay = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID,
@@ -42,7 +56,10 @@ app.post("/create-order", async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error creating Razorpay order:", error);
-    res.status(500).json({ error: "Failed to create order" });
+    res.status(500).json({
+      error: "Failed to create order",
+      details: error instanceof Error ? error.message : "Unknown error",
+    });
   }
 });
 
@@ -54,6 +71,16 @@ app.post("/verify-payment", (req, res) => {
       razorpay_payment_id,
       razorpay_signature,
     } = req.body;
+
+    if (
+      !razorpay_order_id ||
+      !razorpay_payment_id ||
+      !razorpay_signature
+    ) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing payment details" });
+    }
 
     const sign = razorpay_order_id + "|" + razorpay_payment_id;
     const expectedSign = crypto
